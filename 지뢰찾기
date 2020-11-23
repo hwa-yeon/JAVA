@@ -1,0 +1,596 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import javax.swing.*;
+import java.lang.*;
+
+// 지뢰 개수와 타이머를 나타내는 패널
+class UPanel extends JPanel {
+   static int mine;      // 지뢰 개수
+   static String number = "남은 지뢰수 : " + mine + "개";
+   static JLabel l1;
+   static boolean stop = false;
+   int second = 0;   // 타이머 시간
+   String time = "타이머 : " + second + "초";
+   JLabel l2;
+
+   UPanel(int m) {
+      mine = m;
+      number = "남은 지뢰수 : " + mine + "개";
+      
+      setLayout(new GridLayout(0,1));
+      l1 = new JLabel(number, JLabel.CENTER);
+      l2 = new JLabel(time, JLabel.CENTER);
+      add(l1);
+      add(l2);
+      
+      // 타이머 스레드
+      new Thread() {
+         public void run() {
+            while(!stop) {
+               try {
+                  time = "타이머 : " + second + "초";
+                  l2.setText(time);
+                  second++;
+                  sleep(1000);
+               } catch(InterruptedException o) {
+               }
+            }
+         }
+      }.start();
+   }
+   
+   static public void setMinus() {
+      number = "남은 지뢰 수 : " + (--mine) + "개";
+       l1.setText(number);
+   }
+   static public void setPlus() {
+      number = "남은 지뢰 수 : " + (++mine) + "개";
+       l1.setText(number);
+   }
+   
+   static public void setStop() {
+      stop = true;
+   }
+   static public void setNoStop() {
+     stop = false;
+   }
+}
+
+// 지뢰찾기 버튼을 나타내는 패널
+class MPanel extends JPanel {
+   int row;      // 버튼 행
+   int column;   // 버튼 열
+   JButton[][] mButton;
+   int mine;
+   int num = 0;   
+   static boolean click = true;
+
+   MPanel(int r, int c, int m) {
+      row = r;
+      column = c;
+      mButton = new JButton[row][column];
+      mine = m;
+      Color color = new Color(150, 150, 150);
+      
+      setLayout(new GridLayout(row, column));
+      setSize(1000, 600);
+      for (int i = 0; i < row; i++) {
+         for (int j = 0; j < column; j++) {
+            mButton[i][j] = new JButton();
+            add(mButton[i][j]);
+         }
+      }
+
+      for (int i = 0; i < row; i++) {
+         int num1 = i;
+         for (int j = 0; j < column; j++) {
+            int num2 = j;
+
+            // 마우스 이벤트
+            mButton[num1][num2].addMouseListener(new MouseListener() {
+               int count = 0; // 근처에 지뢰 개수를 나타내는 변수
+
+               public void mouseReleased(MouseEvent e) {
+               }
+
+               public void mousePressed(MouseEvent e) {
+               }
+
+               public void mouseExited(MouseEvent e) {
+               }
+
+               public void mouseEntered(MouseEvent e) {
+               }
+
+               public void mouseClicked(MouseEvent e) {
+                  // click이 참일시에만 마우스이벤트 실행
+                  if(click == true) {
+                  // 마우스 클릭시 근처에 있는 지뢰수를 count를 통해 나타냄   
+                     if(mButton[num1][num2].getText() != "\n") {
+                        try {
+                           if (mButton[num1 - 1][num2 - 1].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1 - 1][num2].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1 - 1][num2 + 1].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1][num2 - 1].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1][num2 + 1].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1 + 1][num2 - 1].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1 + 1][num2].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+                        try {
+                           if (mButton[num1 + 1][num2 + 1].getText() == "\n")
+                              count++;
+                        } catch (ArrayIndexOutOfBoundsException o) {
+                        }
+
+                        mButton[num1][num2].setText("" + count);
+                        count = 0;
+                     }
+                   
+                     if (e.getButton() == MouseEvent.BUTTON3) {  
+                        if(mButton[num1][num2].getBackground() == Color.BLUE) {
+                          	 // 우클릭한게 이미 파란색이라면 배경 null로 변경
+                        	mButton[num1][num2].setBackground(null);
+                        	
+                        	// 우클릭한게 이미 파란색이고 지뢰가 아니라면 텍스트를 비워줌
+                        	if(mButton[num1][num2].getText() != "\n")
+                        		mButton[num1][num2].setText("");
+                        	
+                        	// 남은 지뢰 수 1 증가
+                        	UPanel.setPlus();
+                        }
+                        else {
+                        	if(mButton[num1][num2].getBackground() != color) {
+                        		// 우클릭한게 이미 파란색이 아니면 파란색으로 변경
+                        		mButton[num1][num2].setBackground(Color.BLUE);
+                        		// 우클릭한게 이미 파란색이 아니면 남은 지뢰 수 1 감소
+                        		UPanel.setMinus();
+                        		
+                        		if(mButton[num1][num2].getText() != "\n")
+                        			mButton[num1][num2].setText("");
+                        	}
+                            
+                        }
+                       
+                        // 지뢰 우클릭시 num변수 1씩 증가
+                        if(mButton[num1][num2].getText() == "\n")
+                           num++;
+                        // 지뢰가 이닌 버튼 우클릭 시 num변수 1씩 감소
+                        else
+                        	num--;
+                        // 우클릭된 지뢰 수가 지뢰 수와 같다면 성공메세지 출력, 타이머 중단, 마우스이벤트 제한
+                        if(num == mine) {
+                           new SuccessFrame();
+                           UPanel.setStop();
+                           setDisabled();
+                        }
+                     } 
+                     else if (mButton[num1][num2].getText() == "\n") {
+                         // 일반클릭으로 지뢰 선택시 빨간색으로 변경
+                    	if(mButton[num1][num2].getBackground() != Color.BLUE) {
+                    		mButton[num1][num2].setBackground(Color.RED);
+                      
+                    		// 한 개의 지뢰를 클릭할 경우 모든 지뢰를 빨간색으로 표시해줌
+                    		for (int i = 0; i < row; i++) {
+                    			for (int j = 0; j < column; j++) {
+                    				if (mButton[i][j].getText() == "\n") {
+                    					if(mButton[i][j].getBackground() == Color.BLUE)
+                        					UPanel.setPlus();
+                    					mButton[i][j].setBackground(Color.RED);
+                    				}
+                    				
+                    			}
+                    		}
+                    		// 실패메세지 출력, 타이머 중단, 마우스이벤트 제한
+                    		new FailFrame();
+                    		UPanel.setStop();
+                    		setDisabled();
+                    	}
+                     } 
+                     // 일반클릭시 지뢰가 아닌 버튼 선캑
+                     else {
+                    	 // 우클릭된 버튼이라면 클릭을 막고 Text를 비워줌
+                        if(mButton[num1][num2].getBackground() == Color.BLUE) {
+                        	mButton[num1][num2].setText("");
+                        }
+                        // 우클릭된 버튼이 아니라면 근처 지뢰 수 출력
+                        else {
+                        	mButton[num1][num2].setBackground(color);
+                        	mButton[num1][num2].setForeground(Color.BLACK);
+                        }
+                     }
+                  }
+               }
+            });
+         }
+      }
+   }
+   
+   static void setDisabled() {
+      click = false;
+   }
+   static void setAbled() {
+      click = true;
+   }
+}
+
+// 앞의 두 패널을 붙이는 프레임
+class MFrame extends JFrame implements ActionListener {
+   // 처음 시작시 중급으로 시작
+   UPanel u = new UPanel(30);
+   MPanel m = new MPanel(10, 20, 30);
+   JPanel p = new JPanel();
+   
+   String store1 = "C:\\Temp\\store1.txt";
+   String store2 = "C:\\Temp\\store2.txt";
+   String store3 = "C:\\Temp\\store3.txt";
+   
+   MFrame() {
+      setTitle("지뢰 찾기");
+      makeMenu();
+      constructor();
+   }
+   
+   void constructor() {
+      p.setLayout(null);
+      // 초급
+      if(m.mine == 15) {
+         u.setBounds(0, 0, 500, 50);
+          m.setBounds(0, 50, 500, 500);
+      }
+      // 중급
+      else if(m.mine == 30) {
+         u.setBounds(0, 0, 700, 50);
+          m.setBounds(0, 50, 800, 500);
+      }
+      // 고급
+      else {
+         u.setBounds(0, 0, 1000, 50);
+          m.setBounds(0, 50, 1200, 800);
+      }
+        
+      p.add(u);
+      p.add(m);
+      add(p);
+      
+      for (int i = 0; i < m.row; i++) {
+         for (int j = 0; j < m.column; j++) {
+            m.mButton[i][j].setFont(new Font("폰트", Font.PLAIN, 10));
+         }
+      }
+      
+      // 레벨에 맞는 지뢰수를 랜덤한 버튼에 설정
+      reset: for (int i = 0; i < m.mine; i++) {
+         int num1 = (int) (Math.random() * (m.row));
+         int num2 = (int) (Math.random() * (m.column));
+         if (m.mButton[num1][num2].getText() == "\n") { 
+            i--;
+            continue reset;
+         }
+         m.mButton[num1][num2].setText("\n");   // "\n"은 지뢰를 뜻함
+      }
+      
+      // 초급
+      if(m.mine == 15) 
+         setSize(520,620);
+      // 중급
+      else if(m.mine == 30)
+         setSize(820,620);
+      // 고급
+      else
+         setSize(1220, 920);
+      
+      setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      setVisible(true);
+   }
+   
+   // 메뉴
+   void makeMenu() {
+      JMenuItem item;
+      JMenuBar mb = new JMenuBar();
+
+      JMenu m1 = new JMenu("게임");
+      mb.add(m1);
+      JMenu m2 = new JMenu("레벨 선택");
+      mb.add(m2);
+      JMenu m3 = new JMenu("파일");
+      mb.add(m3);
+      JMenu m4 = new JMenu("도움말");
+      mb.add(m4);
+      item = new JMenuItem("새게임");
+      item.addActionListener(this);
+      m1.add(item);
+      item = new JMenuItem("종료하기");
+      item.addActionListener(this);
+      m1.add(item);
+      item = new JMenuItem("초급");
+      item.addActionListener(this);
+      m2.add(item);
+      item = new JMenuItem("중급");
+      item.addActionListener(this);
+      m2.add(item);
+      item = new JMenuItem("고급");
+      item.addActionListener(this);
+      m2.add(item);
+      item = new JMenuItem("저장");
+      item.addActionListener(this);
+      m3.add(item);
+      item = new JMenuItem("불러오기");
+      item.addActionListener(this);
+      m3.add(item);
+      item = new JMenuItem("도움말");
+      item.addActionListener(this);
+      m4.add(item);
+      this.setJMenuBar(mb);
+   }
+
+   public void actionPerformed(ActionEvent e) {
+      JMenuItem mi = (JMenuItem) (e.getSource());
+
+      switch (mi.getText()) {
+      case "새게임":
+        p.removeAll();
+         u.removeAll();
+         u = new UPanel(m.mine);
+         UPanel.setNoStop();   // 게임 시작시 타이머 시작
+         MPanel.setAbled();
+         m.num = 0;
+         
+         // 모든 버튼 초기화
+         for (int i = 0; i < m.row; i++) {
+            for (int j = 0; j < m.column; j++) {
+               m.mButton[i][j].setBackground(null);
+               m.mButton[i][j].setText("");
+            }
+         }
+         
+         constructor();
+
+         break;
+         
+      case "종료하기":
+         System.exit(0);
+         break;
+         
+      case "초급":
+         p.removeAll();
+         u.removeAll();
+         m.removeAll();
+         u = new UPanel(15);
+         UPanel.setNoStop();
+         m = new MPanel(10, 10, 15);
+         MPanel.setAbled();
+         constructor();
+         break;
+         
+      case "중급":
+         p.removeAll();
+         u.removeAll();
+         m.removeAll();
+         u = new UPanel(30);
+         UPanel.setNoStop();
+         m = new MPanel(10, 20, 30);
+         MPanel.setAbled();
+         constructor();
+         break;
+         
+      case "고급":
+         p.removeAll();
+         u.removeAll();
+         m.removeAll();
+         u = new UPanel(50);
+         UPanel.setNoStop();
+         m = new MPanel(20, 30, 50);
+         MPanel.setAbled();
+         constructor();
+         break;
+      
+        case "저장" : 
+           try(FileOutputStream fos1 = new FileOutputStream(store1);
+                 FileOutputStream fos2 = new FileOutputStream(store2);
+                 FileOutputStream fos3 = new FileOutputStream(store3)) { 
+              
+              // 남은 지뢰 수, 전체 지뢰 수 저장
+              fos2.write(u.mine);
+              fos2.write(m.mine);
+              // 타이머 시간 저장
+              fos3.write(u.second);
+              
+              for(int i=0;i<m.row;i++) { 
+                 for(int j=0;j<m.column;j++) {
+                   if(m.mButton[i][j].getBackground() == Color.BLUE) {
+                      // 우클릭된 지뢰는 10으로 저장
+                      if(m.mButton[i][j].getText() == "\n") {
+                         fos1.write(10); 
+                      }
+                      // 우클릭된 일반 버튼은 11로 저장
+                      else 
+                         fos1.write(11);
+                   }
+                   // 아직 클릭되지 않은 지뢰는 12로 저장
+                   else if(m.mButton[i][j].getText() == "\n") 
+                      fos1.write(12);
+                   // 아직 클릭되지 않은 일반 버튼은 13으로 저장
+                   else if(m.mButton[i][j].getText() == "")
+                	   fos1.write(13);
+                   // 클릭된 지뢰가 아닌 수
+                   else {
+                       fos1.write(Integer.parseInt(m.mButton[i][j].getText()));
+                   }
+                 }
+              }
+           }catch(IOException o) { } 
+           break; 
+           
+           case "불러오기" : 
+              try(FileInputStream fis1 = new FileInputStream(store1);
+                    FileInputStream fis2 = new FileInputStream(store2);
+                    FileInputStream fis3 = new FileInputStream(store3)) { 
+                 int c1;
+                 // 지뢰 수 불러오기
+                 int c2 = fis2.read();
+                 int c3 = fis2.read();
+                 // 타이머 시간 불러오기
+                 int c4 = fis3.read();
+                 
+                 UPanel.setNoStop();
+                 MPanel.setAbled();
+                 
+                 // 초급일 경우
+                 if(c3 == 15) {
+                    p.removeAll();
+                    u.removeAll();
+                    m.removeAll();
+                    u = new UPanel(c2);
+                    m = new MPanel(10, 10, 15);
+                    u.second = c4;      // 타이머 시간
+                    constructor();
+                 }
+                 // 중급일 경우
+                 else if(c3 == 30) {
+                    p.removeAll();
+                    u.removeAll();
+                    m.removeAll();
+                    u = new UPanel(c2);
+                    m = new MPanel(10, 20, 30);
+                    u.second = c4;      // 타이머 시간
+                    constructor();
+                 }
+                 // 고급일 경우
+                 else {
+                    p.removeAll();
+                    u.removeAll();
+                    m.removeAll();
+                    u = new UPanel(c2);
+                    m = new MPanel(20, 30, 50);
+                    u.second = c4;      // 타이머 시간
+                    constructor();
+                 }
+                 
+                 int i = 0;
+                 int j = 0;
+                 
+                 while((c1 = fis1.read()) != -1) { 
+                    // 우클릭된 지뢰
+                    if(c1 == 10) {
+                    	m.mButton[i][j++].setText("\n");
+                        m.mButton[i][j-1].setBackground(Color.BLUE);                    }
+                    // 우클릭된 지뢰
+                    else if(c1 == 11) {
+                       m.mButton[i][j++].setText("");
+                       m.mButton[i][j-1].setBackground(Color.BLUE);
+                    }
+                    // 아무 클릭 안된 지뢰
+                    else if(c1 == 12)
+                       m.mButton[i][j++].setText("\n");
+                    // 아무 클릭 안된 지뢰가 아닌 버튼
+                    else if(c1 == 13)
+                        m.mButton[i][j++].setText("");
+                    // 일반클릭된 지뢰가 아닌 버튼
+                    else {
+                       m.mButton[i][j++].setText(""+c1);
+                       m.mButton[i][j-1].setBackground(new Color(150, 150, 150));
+                       m.mButton[i][j-1].setForeground(Color.BLACK);
+                    }
+                    
+                    if(j == m.column) {
+                       i++;
+                       j = 0;
+                    }
+               }
+              }catch(IOException o) { 
+              } 
+              break;
+           case "도움말" :
+              new HelpFrame();
+      }
+
+   }
+}
+
+// 성공메세지
+class SuccessFrame extends JFrame{
+   SuccessFrame() {
+      setTitle("성공!");
+      JLabel success = new JLabel("모든 지뢰를 찾았습니다.");
+      success.setFont(new Font("성공",Font.PLAIN,25));
+      add(success);
+      setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+      setSize(300, 300);
+      setVisible(true);
+   }
+}
+
+// 실패메세지
+class FailFrame extends JFrame {
+   FailFrame() {
+      setTitle("실패!");
+      JLabel fail = new JLabel("지뢰를 클릭하였습니다.");
+      fail.setFont(new Font("실패",Font.PLAIN,25));
+      add(fail);
+      setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+      setSize(400, 400);
+      setVisible(true);
+   }
+}
+
+// 도움말
+class HelpFrame extends JFrame {
+   HelpFrame() {
+      setTitle("도움말");
+      setLayout(new GridLayout(0,1));
+      JLabel help1 = new JLabel("레벨을 선택해주세요.");
+      JLabel help2 = new JLabel("레벨을 선택하지 않을 경우 중급으로 시작합니다.");
+      JLabel help3 = new JLabel("새게임을 클릭하면 새로운 지뢰가 생성됩니다.");
+      JLabel help4 = new JLabel("버튼을 눌러 나오는 숫자는 그 주변에 있는 지뢰수를 나타냅니다.");
+      JLabel help5 = new JLabel("만약 지뢰를 클릭하였다면 모든 지뢰가 표시되며 게임이 종료됩니다.(실패)");
+      JLabel help6 = new JLabel("자신이 지뢰가 있다고 생각하는 곳은 마우스 우클릭을 통하여 표시할 수 있습니다.");
+      JLabel help7 = new JLabel("남은 지뢰수가 0일 때 우클릭한 버튼이 모두 지뢰라면 게임이 종료됩니다.(성공)");
+      JLabel help8 = new JLabel("게임 저장시 남은 지뢰 수와 타이머와 현재 게임중인 화면이 저장됩니다.");
+      
+      add(help1);
+      add(help2);
+      add(help3);
+      add(help4);
+      add(help5);
+      add(help6);
+      add(help7);
+      add(help8);
+      
+      setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+      setSize(600,400);
+      setVisible(true);
+   }
+}
+
+public class MineSearch {
+   public static void main(String[] args) {
+      new MFrame();
+   }
+}
